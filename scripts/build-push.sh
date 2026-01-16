@@ -71,9 +71,11 @@ log_info "ACR Login Server: $ACR_LOGIN_SERVER"
 # Build and push frontend image
 log_info "Building frontend Docker image..."
 cd "$PROJECT_ROOT/src/frontend"
-docker build -t frontend:$VERSION \
-    --build-arg VERSION=$VERSION \
-    -f Dockerfile .
+
+docker build --platform linux/amd64 \
+  -t frontend:$VERSION \
+  --build-arg VERSION=$VERSION \
+  -f Dockerfile .
 
 log_success "Frontend image built"
 
@@ -90,7 +92,9 @@ log_success "Frontend image pushed to ACR"
 # Build and push backend image
 log_info "Building backend Docker image..."
 cd "$PROJECT_ROOT/src/backend"
-docker build -t backend:$VERSION \
+
+docker build --platform linux/amd64 \
+  -t backend:$VERSION \
     --build-arg VERSION=$VERSION \
     -f Dockerfile .
 

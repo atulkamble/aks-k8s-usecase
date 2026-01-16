@@ -1,0 +1,133 @@
+# ===================================
+# LoadBalancer Service - Frontend
+# ===================================
+# Exposes frontend application to external traffic via Azure Load Balancer
+# Automatically provisions a public IP address
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-loadbalancer
+  namespace: default
+  labels:
+    app: frontend
+    tier: frontend
+  annotations:
+    description: "LoadBalancer service for frontend application"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /health
+    # Optional: Uncomment to use internal load balancer
+    # service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+spec:
+  type: LoadBalancer
+  
+  # Session affinity for sticky sessions (optional)
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+  
+  # Port configuration
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80          # External port
+    targetPort: 5000  # Container port
+  
+  # Select frontend pods
+  selector:
+    app: frontend
+    tier: frontend
+  
+  # Health check settings
+  externalTrafficPolicy: Local  # Preserves source IP, better for health checks
+  
+  # Optional: Specify load balancer IP (if you have a reserved IP)
+  # loadBalancerIP: "x.x.x.x"
+  
+  # Optional: Restrict source IP ranges
+  # loadBalancerSourceRanges:
+  # - "0.0.0.0/0"  # Allow all (default)
+
+---
+# ===================================
+# LoadBalancer Service - Backend
+# ===================================
+# Exposes backend API to external traffic via Azure Load Balancer
+# Use this if backend needs direct external access
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-loadbalancer
+  namespace: default
+  labels:
+    app: backend
+    tier: backend
+  annotations:
+    description: "LoadBalancer service for backend API"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /health
+spec:
+  type: LoadBalancer
+  
+  # Session affinity (optional)
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+  
+  # Port configuration
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080        # External port
+    targetPort: 8080  # Container port
+  
+  # Select backend pods
+  selector:
+    app: backend
+    tier: backend
+  
+  # Health check settings
+  externalTrafficPolicy: Local
+  
+  # Optional: Specify load balancer IP
+  # loadBalancerIP: "x.x.x.x"
+
+---
+# ===================================
+# LoadBalancer Service - Combined (Alternative)
+# ===================================
+# Single LoadBalancer exposing both frontend and backend
+# More cost-effective (1 public IP instead of 2)
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-loadbalancer
+  namespace: default
+  labels:
+    app: aks-demo
+  annotations:
+    description: "Combined LoadBalancer for both frontend and backend"
+    service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /health
+spec:
+  type: LoadBalancer
+  
+  # Multiple ports for different services
+  ports:
+  # Frontend port
+  - name: frontend-http
+    protocol: TCP
+    port: 80          # External port for frontend
+    targetPort: 5000  # Frontend container port
+  
+  # Backend API port
+  - name: backend-http
+    protocol: TCP
+    port: 8080        # External port for backend
+    targetPort: 8080  # Backend container port
+  
+  # Note: This combined approach requires routing logic
+  # Better to use separate LoadBalancers or Ingress
+  selector:
+    app: frontend  # Change based on primary service

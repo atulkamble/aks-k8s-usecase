@@ -65,7 +65,7 @@ spec:
       # Container specification
       containers:
       - name: backend
-        image: myacr.azurecr.io/backend:v1.0.0  # Update with your ACR URL
+        image: atulkamble.azurecr.io/backend:v1.0.0
         imagePullPolicy: Always
         
         # Container ports

@@ -57,7 +57,7 @@ spec:
       # Container specification
       containers:
       - name: frontend
-        image: myacr.azurecr.io/frontend:v1.0.0  # Update with your ACR URL
+        image: atulkamble.azurecr.io/frontend:v1.0.0
         imagePullPolicy: Always
         
         # Container ports
