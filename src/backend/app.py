@@ -123,6 +123,20 @@ def get_items():
         logger.error(f"Error fetching items: {str(e)}")
         return jsonify({'error': 'Failed to fetch items', 'message': str(e)}), 500
 
+@app.route('/api/data', methods=['GET'])
+def get_data():
+    """
+    Retrieve all items (alias for /api/items for frontend compatibility).
+    
+    Query Parameters:
+        limit (int): Maximum number of items to return
+        offset (int): Number of items to skip
+    
+    Returns:
+        JSON response with list of items
+    """
+    return get_items()
+
 @app.route('/api/items/<item_id>', methods=['GET'])
 def get_item(item_id):
     """
