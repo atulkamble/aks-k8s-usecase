@@ -1,0 +1,261 @@
+# ===================================
+# Frontend Deployment
+# ===================================
+# Kubernetes Deployment manifest for the frontend microservice
+# Implements best practices for production deployments including
+# resource limits, health checks, and rolling updates
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: default
+  labels:
+    app: frontend
+    tier: frontend
+    version: v1
+    managed-by: kubernetes
+  annotations:
+    description: "Frontend web UI for the AKS demo application"
+    author: "Atul Kamble"
+spec:
+  # Replica configuration for high availability
+  replicas: 3
+  
+  # Rolling update strategy for zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Maximum number of pods that can be created above desired replicas
+      maxUnavailable: 1  # Maximum number of pods that can be unavailable during update
+  
+  # Selector to match pods
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+  
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: frontend
+        tier: frontend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5000"
+        prometheus.io/path: "/api/metrics"
+    
+    spec:
+      # Security context for the pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      
+      # Container specification
+      containers:
+      - name: frontend
+        image: myacr.azurecr.io/frontend:v1.0.0  # Update with your ACR URL
+        imagePullPolicy: Always
+        
+        # Container ports
+        ports:
+        - containerPort: 5000
+          name: http
+          protocol: TCP
+        
+        # Environment variables
+        env:
+        - name: SERVICE_NAME
+          value: "frontend"
+        - name: VERSION
+          value: "1.0.0"
+        - name: BACKEND_API_URL
+          value: "http://backend-service:8080"
+        - name: PORT
+          value: "5000"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        
+        # Resource limits and requests
+        # Critical for cluster stability and efficient resource utilization
+        resources:
+          requests:
+            cpu: 100m      # Minimum CPU required
+            memory: 128Mi  # Minimum memory required
+          limits:
+            cpu: 500m      # Maximum CPU allowed
+            memory: 512Mi  # Maximum memory allowed
+        
+        # Liveness probe - determines if container is running
+        # If this fails, Kubernetes will restart the container
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 30  # Wait before first check
+          periodSeconds: 10        # Check interval
+          timeoutSeconds: 5        # Request timeout
+          successThreshold: 1      # Consecutive successes to be considered alive
+          failureThreshold: 3      # Consecutive failures before restart
+        
+        # Readiness probe - determines if container can accept traffic
+        # If this fails, pod is removed from service endpoints
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        
+        # Startup probe - for slow-starting containers
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30  # Allow up to 5 minutes for startup
+        
+        # Security context for the container
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false  # Set to true if app doesn't need write access
+          capabilities:
+            drop:
+            - ALL
+      
+      # Image pull secrets (if using private registry)
+      # Uncomment and configure if needed
+      # imagePullSecrets:
+      # - name: acr-secret
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # DNS policy
+      dnsPolicy: ClusterFirst
+      
+      # Termination grace period
+      terminationGracePeriodSeconds: 30
+
+---
+# ===================================
+# Frontend Service
+# ===================================
+# Kubernetes Service manifest for the frontend
+# Provides stable network endpoint for frontend pods
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  namespace: default
+  labels:
+    app: frontend
+    tier: frontend
+  annotations:
+    description: "Service endpoint for frontend pods"
+spec:
+  type: ClusterIP  # Internal service (use LoadBalancer for external access)
+  
+  # Session affinity for sticky sessions (optional)
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 3 hours
+  
+  # Selector to match frontend pods
+  selector:
+    app: frontend
+    tier: frontend
+  
+  # Port configuration
+  ports:
+  - name: http
+    protocol: TCP
+    port: 80        # Service port
+    targetPort: 5000 # Container port
+  
+  # Service will be available at:
+  # - frontend-service.default.svc.cluster.local (internal DNS)
+  # - frontend-service (within same namespace)
+
+---
+# ===================================
+# Frontend HorizontalPodAutoscaler
+# ===================================
+# Automatically scales frontend pods based on CPU/Memory utilization
+# Ensures application can handle varying load
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-hpa
+  namespace: default
+  labels:
+    app: frontend
+  annotations:
+    description: "Auto-scaling configuration for frontend pods"
+spec:
+  # Target deployment
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend
+  
+  # Replica bounds
+  minReplicas: 3   # Minimum number of replicas
+  maxReplicas: 10  # Maximum number of replicas
+  
+  # Scaling metrics
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Target 70% CPU utilization
+  
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Target 80% memory utilization
+  
+  # Scaling behavior configuration
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down by max 50% of current pods
+        periodSeconds: 60
+      - type: Pods
+        value: 1   # Scale down by max 1 pod
+        periodSeconds: 60
+      selectPolicy: Min  # Use the policy that scales down the least
+    
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately
+      policies:
+      - type: Percent
+        value: 100  # Scale up by max 100% of current pods
+        periodSeconds: 30
+      - type: Pods
+        value: 2    # Scale up by max 2 pods
+        periodSeconds: 30
+      selectPolicy: Max  # Use the policy that scales up the most

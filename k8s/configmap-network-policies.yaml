@@ -1,0 +1,314 @@
+# ===================================
+# ConfigMap for Application Configuration
+# ===================================
+# Kubernetes ConfigMap for non-sensitive configuration data
+# Used by frontend and backend services
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: default
+  labels:
+    app: aks-demo
+  annotations:
+    description: "Application configuration settings"
+    author: "Atul Kamble"
+data:
+  # Application settings
+  APP_NAME: "AKS Demo Application"
+  APP_VERSION: "1.0.0"
+  ENVIRONMENT: "production"
+  
+  # Logging configuration
+  LOG_LEVEL: "INFO"
+  LOG_FORMAT: "json"
+  
+  # Feature flags
+  ENABLE_METRICS: "true"
+  ENABLE_TRACING: "false"
+  ENABLE_DEBUG: "false"
+  
+  # Service URLs (internal)
+  FRONTEND_URL: "http://frontend-service"
+  BACKEND_URL: "http://backend-service:8080"
+  
+  # Timeouts (in seconds)
+  REQUEST_TIMEOUT: "30"
+  CONNECTION_TIMEOUT: "10"
+  
+  # Rate limiting
+  RATE_LIMIT_REQUESTS: "100"
+  RATE_LIMIT_WINDOW: "60"
+
+---
+# ===================================
+# NetworkPolicy - Frontend
+# ===================================
+# Network policy to control traffic to/from frontend pods
+# Implements micro-segmentation for security
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-network-policy
+  namespace: default
+  labels:
+    app: frontend
+  annotations:
+    description: "Network policy for frontend pods"
+spec:
+  # Apply to frontend pods
+  podSelector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+  
+  # Policy types
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # Ingress rules - who can access frontend
+  ingress:
+  # Allow traffic from ingress controller
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 5000
+  
+  # Allow traffic from same namespace (for debugging)
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 5000
+  
+  # Egress rules - what frontend can access
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  
+  # Allow access to backend service
+  - to:
+    - podSelector:
+        matchLabels:
+          app: backend
+    ports:
+    - protocol: TCP
+      port: 8080
+  
+  # Allow external HTTPS (for dependencies, etc.)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# ===================================
+# NetworkPolicy - Backend
+# ===================================
+# Network policy to control traffic to/from backend pods
+# More restrictive than frontend
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: backend-network-policy
+  namespace: default
+  labels:
+    app: backend
+  annotations:
+    description: "Network policy for backend API pods"
+spec:
+  # Apply to backend pods
+  podSelector:
+    matchLabels:
+      app: backend
+      tier: backend
+  
+  # Policy types
+  policyTypes:
+  - Ingress
+  - Egress
+  
+  # Ingress rules - who can access backend
+  ingress:
+  # Allow traffic from frontend
+  - from:
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 8080
+  
+  # Allow traffic from ingress controller (if direct access needed)
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8080
+  
+  # Egress rules - what backend can access
+  egress:
+  # Allow DNS resolution
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: UDP
+      port: 53
+  
+  # Allow database access (adjust based on your DB)
+  - to:
+    - podSelector:
+        matchLabels:
+          app: database
+    ports:
+    - protocol: TCP
+      port: 5432  # PostgreSQL (adjust for your DB)
+  
+  # Allow external HTTPS (for APIs, etc.)
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 443
+
+---
+# ===================================
+# PodDisruptionBudget - Frontend
+# ===================================
+# Ensures minimum availability during voluntary disruptions
+# (e.g., node drains, cluster upgrades)
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: frontend-pdb
+  namespace: default
+  labels:
+    app: frontend
+  annotations:
+    description: "Pod disruption budget for frontend"
+spec:
+  # Minimum available pods during disruption
+  minAvailable: 2
+  
+  # Alternative: maxUnavailable: 1
+  
+  selector:
+    matchLabels:
+      app: frontend
+      tier: frontend
+
+---
+# ===================================
+# PodDisruptionBudget - Backend
+# ===================================
+# Ensures minimum availability for backend API
+
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: backend-pdb
+  namespace: default
+  labels:
+    app: backend
+  annotations:
+    description: "Pod disruption budget for backend API"
+spec:
+  # Minimum available pods during disruption
+  minAvailable: 2
+  
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+
+---
+# ===================================
+# ResourceQuota
+# ===================================
+# Limits total resource consumption in namespace
+# Prevents resource exhaustion
+
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: default-quota
+  namespace: default
+  labels:
+    app: aks-demo
+  annotations:
+    description: "Resource quota for default namespace"
+spec:
+  hard:
+    # Limit number of resources
+    pods: "50"
+    services: "20"
+    secrets: "30"
+    configmaps: "30"
+    persistentvolumeclaims: "10"
+    
+    # Limit resource consumption
+    requests.cpu: "20"
+    requests.memory: "40Gi"
+    limits.cpu: "40"
+    limits.memory: "80Gi"
+
+---
+# ===================================
+# LimitRange
+# ===================================
+# Sets default resource limits for pods
+# Ensures all pods have resource limits
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: default-limit-range
+  namespace: default
+  labels:
+    app: aks-demo
+  annotations:
+    description: "Default resource limits for pods"
+spec:
+  limits:
+  # Container limits
+  - type: Container
+    default:
+      cpu: 500m
+      memory: 512Mi
+    defaultRequest:
+      cpu: 100m
+      memory: 128Mi
+    max:
+      cpu: 2
+      memory: 4Gi
+    min:
+      cpu: 50m
+      memory: 64Mi
+  
+  # Pod limits
+  - type: Pod
+    max:
+      cpu: 4
+      memory: 8Gi
+    min:
+      cpu: 50m
+      memory: 64Mi

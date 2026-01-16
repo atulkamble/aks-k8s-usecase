@@ -1,0 +1,316 @@
+# ===================================
+# Backend API Deployment
+# ===================================
+# Kubernetes Deployment manifest for the backend API microservice
+# Implements production-ready configuration with health checks,
+# resource management, and auto-scaling capabilities
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: default
+  labels:
+    app: backend
+    tier: backend
+    version: v1
+    managed-by: kubernetes
+  annotations:
+    description: "Backend REST API service for the AKS demo application"
+    author: "Atul Kamble"
+spec:
+  # Replica configuration for high availability
+  replicas: 3
+  
+  # Rolling update strategy for zero-downtime deployments
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Maximum number of pods that can be created above desired replicas
+      maxUnavailable: 0  # No pods should be unavailable during update (for critical services)
+  
+  # Minimum time for pod to be ready before marked as available
+  minReadySeconds: 10
+  
+  # Number of old ReplicaSets to retain for rollback
+  revisionHistoryLimit: 10
+  
+  # Selector to match pods
+  selector:
+    matchLabels:
+      app: backend
+      tier: backend
+  
+  # Pod template
+  template:
+    metadata:
+      labels:
+        app: backend
+        tier: backend
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/api/metrics"
+    
+    spec:
+      # Security context for the pod
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      
+      # Container specification
+      containers:
+      - name: backend
+        image: myacr.azurecr.io/backend:v1.0.0  # Update with your ACR URL
+        imagePullPolicy: Always
+        
+        # Container ports
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        
+        # Environment variables
+        env:
+        - name: SERVICE_NAME
+          value: "backend"
+        - name: VERSION
+          value: "1.0.0"
+        - name: PORT
+          value: "8080"
+        - name: PYTHONUNBUFFERED
+          value: "1"
+        # Database configuration (example - configure based on your DB)
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: backend-secrets
+              key: database-url
+              optional: true  # Set to false in production
+        
+        # Resource limits and requests
+        # Properly sized for typical API workloads
+        resources:
+          requests:
+            cpu: 200m      # Minimum CPU required
+            memory: 256Mi  # Minimum memory required
+          limits:
+            cpu: 1000m     # Maximum CPU allowed (1 core)
+            memory: 1Gi    # Maximum memory allowed
+        
+        # Liveness probe - determines if container is running
+        # If this fails, Kubernetes will restart the container
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 30  # Wait before first check
+          periodSeconds: 10        # Check interval
+          timeoutSeconds: 5        # Request timeout
+          successThreshold: 1      # Consecutive successes to be considered alive
+          failureThreshold: 3      # Consecutive failures before restart
+        
+        # Readiness probe - determines if container can accept traffic
+        # If this fails, pod is removed from service endpoints
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 3
+        
+        # Startup probe - for slow-starting containers
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+            scheme: HTTP
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          successThreshold: 1
+          failureThreshold: 30  # Allow up to 5 minutes for startup
+        
+        # Security context for the container
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+        
+        # Lifecycle hooks
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]  # Graceful shutdown delay
+      
+      # Image pull secrets (if using private registry)
+      # Uncomment and configure if needed
+      # imagePullSecrets:
+      # - name: acr-secret
+      
+      # Restart policy
+      restartPolicy: Always
+      
+      # DNS policy
+      dnsPolicy: ClusterFirst
+      
+      # Termination grace period - time to gracefully shutdown
+      terminationGracePeriodSeconds: 30
+      
+      # Pod anti-affinity to spread pods across nodes
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - backend
+              topologyKey: kubernetes.io/hostname
+
+---
+# ===================================
+# Backend Service
+# ===================================
+# Kubernetes Service manifest for the backend API
+# Provides stable network endpoint for backend pods
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-service
+  namespace: default
+  labels:
+    app: backend
+    tier: backend
+  annotations:
+    description: "Service endpoint for backend API pods"
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"  # Internal LB
+spec:
+  type: ClusterIP  # Internal service only (accessed via frontend or ingress)
+  
+  # Session affinity for stateful connections (if needed)
+  sessionAffinity: None
+  
+  # Selector to match backend pods
+  selector:
+    app: backend
+    tier: backend
+  
+  # Port configuration
+  ports:
+  - name: http
+    protocol: TCP
+    port: 8080       # Service port
+    targetPort: 8080 # Container port
+  
+  # Service will be available at:
+  # - backend-service.default.svc.cluster.local (internal DNS)
+  # - backend-service (within same namespace)
+
+---
+# ===================================
+# Backend HorizontalPodAutoscaler
+# ===================================
+# Automatically scales backend pods based on CPU/Memory utilization
+# Critical for handling API traffic spikes
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: backend-hpa
+  namespace: default
+  labels:
+    app: backend
+  annotations:
+    description: "Auto-scaling configuration for backend API pods"
+spec:
+  # Target deployment
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backend
+  
+  # Replica bounds
+  minReplicas: 3    # Minimum number of replicas (HA requirement)
+  maxReplicas: 20   # Maximum number of replicas (higher for API services)
+  
+  # Scaling metrics
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70  # Target 70% CPU utilization
+  
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80  # Target 80% memory utilization
+  
+  # Scaling behavior configuration
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5 minutes before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down by max 50% of current pods
+        periodSeconds: 60
+      - type: Pods
+        value: 2   # Scale down by max 2 pods at a time
+        periodSeconds: 60
+      selectPolicy: Min  # Use the policy that scales down the least
+    
+    scaleUp:
+      stabilizationWindowSeconds: 0  # Scale up immediately when needed
+      policies:
+      - type: Percent
+        value: 100  # Scale up by max 100% of current pods
+        periodSeconds: 30
+      - type: Pods
+        value: 4    # Scale up by max 4 pods at a time
+        periodSeconds: 30
+      selectPolicy: Max  # Use the policy that scales up the most
+
+---
+# ===================================
+# Backend Secrets
+# ===================================
+# Kubernetes Secret for sensitive backend configuration
+# In production, use Azure Key Vault or external secrets management
+
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: default
+  labels:
+    app: backend
+  annotations:
+    description: "Sensitive configuration for backend service"
+type: Opaque
+stringData:
+  # Database connection string (example)
+  database-url: "postgresql://user:password@db-host:5432/dbname"
+  # Add other secrets as needed
+  # api-key: "your-api-key"
+  # jwt-secret: "your-jwt-secret"

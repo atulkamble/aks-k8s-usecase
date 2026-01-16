@@ -1,0 +1,24 @@
+# Backend API Service Dependencies
+# ==================================
+# Python dependencies for the Flask-based backend API microservice
+
+# Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# CORS support for cross-origin requests
+Flask-CORS==4.0.0
+
+# Production WSGI Server
+gunicorn==21.2.0
+
+# Database (Add your specific DB driver)
+# psycopg2-binary==2.9.9  # PostgreSQL
+# pymongo==4.6.1          # MongoDB
+# mysql-connector-python==8.2.0  # MySQL
+
+# Health checks and monitoring
+prometheus-client==0.19.0
+
+# Utilities
+python-dotenv==1.0.0

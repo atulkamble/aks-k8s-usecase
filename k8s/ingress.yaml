@@ -1,0 +1,181 @@
+# ===================================
+# Ingress Configuration
+# ===================================
+# Kubernetes Ingress manifest for routing external traffic
+# to frontend and backend services
+# Uses NGINX Ingress Controller
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress
+  namespace: default
+  labels:
+    app: aks-demo
+    component: ingress
+  annotations:
+    # Ingress controller class
+    kubernetes.io/ingress.class: nginx
+    
+    # SSL/TLS configuration
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Redirect HTTP to HTTPS
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # CORS configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "*"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    
+    # Proxy settings
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    
+    # Additional headers for security
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: SAMEORIGIN";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+    
+    # Description
+    description: "Main ingress for AKS demo application"
+    author: "Atul Kamble"
+
+spec:
+  # TLS configuration
+  tls:
+  - hosts:
+    - app.example.com        # Replace with your domain
+    - api.example.com        # Replace with your API domain
+    secretName: app-tls-cert # TLS secret name
+  
+  # Ingress rules
+  rules:
+  # Frontend routing
+  - host: app.example.com    # Replace with your domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+  
+  # Backend API routing
+  - host: api.example.com    # Replace with your API domain
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 8080
+
+---
+# ===================================
+# Ingress (Alternative - Single Domain)
+# ===================================
+# Alternative ingress configuration using path-based routing
+# on a single domain
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: app-ingress-single-domain
+  namespace: default
+  labels:
+    app: aks-demo
+    component: ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    description: "Path-based routing on single domain"
+
+spec:
+  tls:
+  - hosts:
+    - myapp.example.com      # Replace with your domain
+    secretName: app-tls-cert
+  
+  rules:
+  - host: myapp.example.com  # Replace with your domain
+    http:
+      paths:
+      # Frontend paths
+      - path: /()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+      
+      # Backend API paths
+      - path: /api(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 8080
+
+---
+# ===================================
+# ConfigMap for NGINX Ingress Controller
+# ===================================
+# Custom configuration for NGINX Ingress Controller
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-ingress-controller-config
+  namespace: ingress-nginx
+  labels:
+    app: nginx-ingress
+  annotations:
+    description: "Custom NGINX ingress controller configuration"
+data:
+  # SSL/TLS settings
+  ssl-protocols: "TLSv1.2 TLSv1.3"
+  ssl-ciphers: "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384"
+  
+  # Performance settings
+  worker-processes: "auto"
+  max-worker-connections: "16384"
+  
+  # Timeouts
+  keep-alive: "75"
+  keep-alive-requests: "100"
+  
+  # Buffer sizes
+  client-body-buffer-size: "16k"
+  client-header-buffer-size: "1k"
+  large-client-header-buffers: "4 8k"
+  
+  # Logging
+  log-format-upstream: '$remote_addr - $remote_user [$time_local] "$request" $status $body_bytes_sent "$http_referer" "$http_user_agent" $request_length $request_time [$proxy_upstream_name] [$proxy_alternative_upstream_name] $upstream_addr $upstream_response_length $upstream_response_time $upstream_status $req_id'
+  
+  # Security
+  hide-headers: "X-Powered-By,Server"
+  enable-modsecurity: "false"
+  enable-owasp-modsecurity-crs: "false"
+  
+  # Compression
+  use-gzip: "true"
+  gzip-level: "5"
+  gzip-types: "application/javascript application/json text/css text/plain text/xml"

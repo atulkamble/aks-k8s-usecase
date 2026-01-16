@@ -1,0 +1,19 @@
+# Frontend Service Dependencies
+# =============================
+# Python dependencies for the Flask-based frontend microservice
+
+# Web Framework
+Flask==3.0.0
+Werkzeug==3.0.1
+
+# HTTP Client for inter-service communication
+requests==2.31.0
+
+# Production WSGI Server
+gunicorn==21.2.0
+
+# Health checks and monitoring
+prometheus-client==0.19.0
+
+# Utilities
+python-dotenv==1.0.0

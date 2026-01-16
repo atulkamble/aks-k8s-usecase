@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<!--
+Frontend UI Template
+====================
+Simple, responsive HTML template for the AKS demo application.
+Demonstrates modern web design with API integration.
+
+Author: Atul Kamble
+Version: 1.0.0
+-->
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKS Microservices Demo - {{ service_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .info-section {
+            padding: 30px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .info-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .info-card h3 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .info-card p {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .data-section {
+            padding: 30px;
+        }
+
+        .data-section h2 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        #data-container {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            min-height: 100px;
+        }
+
+        .item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .item h4 {
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .item p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .error {
+            color: #e74c3c;
+            padding: 15px;
+            background: #fee;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 AKS Microservices Demo</h1>
+            <p>Production-Ready Kubernetes Application on Azure</p>
+        </header>
+
+        <div class="info-section">
+            <h2>Service Information</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>📦 Service Name</h3>
+                    <p><strong>{{ service_name }}</strong></p>
+                </div>
+                <div class="info-card">
+                    <h3>🏷️ Version</h3>
+                    <p><strong>{{ version }}</strong></p>
+                </div>
+                <div class="info-card">
+                    <h3>☁️ Platform</h3>
+                    <p><strong>Azure Kubernetes Service (AKS)</strong></p>
+                </div>
+                <div class="info-card">
+                    <h3>🔧 Technology Stack</h3>
+                    <p><strong>Flask + Python 3.11</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="data-section">
+            <h2>📊 Backend API Integration</h2>
+            <p>Click the button below to fetch data from the backend microservice:</p>
+            <br>
+            <button class="btn" onclick="fetchData()">Fetch Data from Backend</button>
+            <div id="data-container"></div>
+        </div>
+
+        <footer>
+            <p>Built with ❤️ by <a href="https://github.com/atulkamble" target="_blank">Atul Kamble</a></p>
+            <p>© 2026 AKS Kubernetes Use Case Demo</p>
+        </footer>
+    </div>
+
+    <script>
+        /**
+         * Fetch data from the backend API service
+         * Demonstrates inter-service communication in Kubernetes
+         */
+        async function fetchData() {
+            const container = document.getElementById('data-container');
+            container.innerHTML = '<p class="loading">⏳ Loading data from backend service...</p>';
+
+            try {
+                const response = await fetch('/api/data');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                displayData(data);
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                container.innerHTML = `
+                    <div class="error">
+                        <strong>❌ Error:</strong> ${error.message}
+                        <br><br>
+                        <small>Please ensure the backend service is running and accessible.</small>
+                    </div>
+                `;
+            }
+        }
+
+        /**
+         * Display fetched data in the UI
+         * @param {Object} data - Data received from backend
+         */
+        function displayData(data) {
+            const container = document.getElementById('data-container');
+            
+            if (!data.items || data.items.length === 0) {
+                container.innerHTML = '<p>No items found.</p>';
+                return;
+            }
+
+            let html = `<h3>✅ Successfully fetched ${data.items.length} items:</h3><br>`;
+            
+            data.items.forEach(item => {
+                html += `
+                    <div class="item">
+                        <h4>📌 ${item.name}</h4>
+                        <p>${item.description}</p>
+                        <p><small><strong>ID:</strong> ${item.id} | <strong>Created:</strong> ${new Date(item.created_at).toLocaleString()}</small></p>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        /**
+         * Check service health on page load
+         */
+        window.addEventListener('load', async () => {
+            try {
+                const response = await fetch('/health');
+                const health = await response.json();
+                console.log('Service Health:', health);
+            } catch (error) {
+                console.error('Health check failed:', error);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+name: CI/CD Pipeline
+
+# ====================================================================
+# GitHub Actions Workflow for AKS Deployment
+# ====================================================================
+# This workflow automates the entire CI/CD process:
+# 1. Builds Docker images
+# 2. Pushes to Azure Container Registry
+# 3. Deploys to AKS cluster
+#
+# Author: Atul Kamble
+# Version: 1.0.0
+# ====================================================================
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:  # Allow manual trigger
+
+env:
+  # Azure configuration
+  AZURE_RESOURCE_GROUP: aks-demo-rg
+  AZURE_AKS_CLUSTER: aks-demo-cluster
+  AZURE_ACR_NAME: aksdemoregistry
+  
+  # Application configuration
+  APP_NAMESPACE: default
+  
+  # Image tags
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  # ====================================================================
+  # Job 1: Build and Test
+  # ====================================================================
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install dependencies - Frontend
+      run: |
+        cd src/frontend
+        pip install -r requirements.txt
+    
+    - name: Install dependencies - Backend
+      run: |
+        cd src/backend
+        pip install -r requirements.txt
+    
+    - name: Run linting
+      run: |
+        pip install flake8
+        flake8 src/ --count --select=E9,F63,F7,F82 --show-source --statistics
+    
+    - name: Run tests
+      run: |
+        echo "Running tests..."
+        # Add your test commands here
+        # pytest tests/
+    
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: test-results/
+
+  # ====================================================================
+  # Job 2: Build and Push Docker Images
+  # ====================================================================
+  build-and-push:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Login to Azure Container Registry
+      run: |
+        az acr login --name ${{ env.AZURE_ACR_NAME }}
+    
+    - name: Get ACR login server
+      id: acr
+      run: |
+        ACR_LOGIN_SERVER=$(az acr show --name ${{ env.AZURE_ACR_NAME }} --query loginServer --output tsv)
+        echo "login_server=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+    
+    - name: Build and push Frontend image
+      run: |
+        cd src/frontend
+        docker build -t ${{ steps.acr.outputs.login_server }}/frontend:${{ env.IMAGE_TAG }} \
+                     -t ${{ steps.acr.outputs.login_server }}/frontend:latest \
+                     .
+        docker push ${{ steps.acr.outputs.login_server }}/frontend:${{ env.IMAGE_TAG }}
+        docker push ${{ steps.acr.outputs.login_server }}/frontend:latest
+    
+    - name: Build and push Backend image
+      run: |
+        cd src/backend
+        docker build -t ${{ steps.acr.outputs.login_server }}/backend:${{ env.IMAGE_TAG }} \
+                     -t ${{ steps.acr.outputs.login_server }}/backend:latest \
+                     .
+        docker push ${{ steps.acr.outputs.login_server }}/backend:${{ env.IMAGE_TAG }}
+        docker push ${{ steps.acr.outputs.login_server }}/backend:latest
+    
+    - name: Scan images for vulnerabilities
+      run: |
+        az acr task run \
+          --registry ${{ env.AZURE_ACR_NAME }} \
+          --cmd "mcr.microsoft.com/azure-cli az acr check-health --name ${{ env.AZURE_ACR_NAME }}" \
+          /dev/null || true
+
+  # ====================================================================
+  # Job 3: Deploy to AKS
+  # ====================================================================
+  deploy-to-aks:
+    name: Deploy to AKS
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
+    
+    - name: Get AKS credentials
+      run: |
+        az aks get-credentials \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.AZURE_AKS_CLUSTER }} \
+          --overwrite-existing
+    
+    - name: Get ACR login server
+      id: acr
+      run: |
+        ACR_LOGIN_SERVER=$(az acr show --name ${{ env.AZURE_ACR_NAME }} --query loginServer --output tsv)
+        echo "login_server=$ACR_LOGIN_SERVER" >> $GITHUB_OUTPUT
+    
+    - name: Update Kubernetes manifests
+      run: |
+        # Update image references in deployment files
+        sed -i "s|myacr.azurecr.io/frontend:v1.0.0|${{ steps.acr.outputs.login_server }}/frontend:${{ env.IMAGE_TAG }}|g" k8s/frontend-deployment.yaml
+        sed -i "s|myacr.azurecr.io/backend:v1.0.0|${{ steps.acr.outputs.login_server }}/backend:${{ env.IMAGE_TAG }}|g" k8s/backend-deployment.yaml
+    
+    - name: Deploy to AKS
+      run: |
+        kubectl apply -f k8s/configmap-network-policies.yaml -n ${{ env.APP_NAMESPACE }}
+        kubectl apply -f k8s/backend-deployment.yaml -n ${{ env.APP_NAMESPACE }}
+        kubectl apply -f k8s/frontend-deployment.yaml -n ${{ env.APP_NAMESPACE }}
+        kubectl apply -f k8s/ingress.yaml -n ${{ env.APP_NAMESPACE }}
+    
+    - name: Wait for deployments to be ready
+      run: |
+        kubectl rollout status deployment/backend -n ${{ env.APP_NAMESPACE }} --timeout=300s
+        kubectl rollout status deployment/frontend -n ${{ env.APP_NAMESPACE }} --timeout=300s
+    
+    - name: Verify deployment
+      run: |
+        kubectl get deployments -n ${{ env.APP_NAMESPACE }}
+        kubectl get pods -n ${{ env.APP_NAMESPACE }}
+        kubectl get services -n ${{ env.APP_NAMESPACE }}
+        kubectl get ingress -n ${{ env.APP_NAMESPACE }}
+    
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests..."
+        # Add smoke test commands here
+        # curl -f http://your-app-url/health || exit 1
+    
+    - name: Notify on success
+      if: success()
+      run: |
+        echo "Deployment successful!"
+        # Add notification logic (Slack, Teams, etc.)
+    
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "Deployment failed!"
+        # Add notification logic
+
+  # ====================================================================
+  # Job 4: Security Scanning
+  # ====================================================================
+  security-scan:
+    name: Security Scanning
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'

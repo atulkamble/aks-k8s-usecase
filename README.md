@@ -1,20 +1,14 @@
 <div align="center">
-<h1>🚀 Kubernetes Full Use Case on AKS</h1>
+<h1>🚀 Production-Ready Microservices on AKS</h1>
+<p><strong>Complete Kubernetes Implementation with Flask Microservices</strong></p>
 <p><strong>Built with ❤️ by <a href="https://github.com/atulkamble">Atul Kamble</a></strong></p>
 
 <p>
-<a href="https://codespaces.new/atulkamble/template.git">
-<img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" />
-</a>
-<a href="https://vscode.dev/github/atulkamble/template">
-<img src="https://img.shields.io/badge/Open%20with-VS%20Code-007ACC?logo=visualstudiocode&style=for-the-badge" alt="Open with VS Code" />
-</a>
-<a href="https://vscode.dev/redirect?url=vscode://ms-vscode-remote.remote-containers/cloneInVolume?url=https://github.com/atulkamble/template">
-<img src="https://img.shields.io/badge/Dev%20Containers-Ready-blue?logo=docker&style=for-the-badge" />
-</a>
-<a href="https://desktop.github.com/">
-<img src="https://img.shields.io/badge/GitHub-Desktop-6f42c1?logo=github&style=for-the-badge" />
-</a>
+<img src="https://img.shields.io/badge/Azure-AKS-0078D4?logo=microsoftazure&style=for-the-badge" alt="Azure AKS" />
+<img src="https://img.shields.io/badge/Kubernetes-326CE5?logo=kubernetes&logoColor=white&style=for-the-badge" alt="Kubernetes" />
+<img src="https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white&style=for-the-badge" alt="Python" />
+<img src="https://img.shields.io/badge/Flask-000000?logo=flask&logoColor=white&style=for-the-badge" alt="Flask" />
+<img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white&style=for-the-badge" alt="Docker" />
 </p>
 
 <p>
@@ -29,261 +23,465 @@
 </a>
 </p>
 
-<strong>Version 1.0.0</strong> | <strong>Last Updated:</strong> January 2026
+<p><strong>Version 1.0.0</strong> | <strong>Last Updated:</strong> January 2026</p>
+
 </div>
 
-Below is a **complete, real-world Kubernetes use case on AKS**, written in a **solution-architecture + DevOps interview/project format**. This is suitable for **GitHub README, training material, interviews, and client proposals**.
-
 ---
 
-**Title:** Production-Ready Microservices Deployment on Azure Kubernetes Service (AKS)
+## 📖 Overview
 
-![Image](https://learn.microsoft.com/en-us/azure/architecture/reference-architectures/containers/aks-microservices/images/microservices-architecture.svg)
+This repository contains a **complete, production-ready microservices application** designed for Azure Kubernetes Service (AKS). It includes fully functional Flask-based microservices, comprehensive Kubernetes manifests, automation scripts, CI/CD pipeline, and extensive documentation.
 
-![Image](https://miro.medium.com/v2/resize%3Afit%3A1200/1%2AzVSM0ag7HhrjJGsEMsVVQQ.png)
+**Perfect for:**
+- ✅ Learning Kubernetes and AKS
+- ✅ DevOps interviews and demonstrations
+- ✅ Production deployment reference
+- ✅ Training and workshops
+- ✅ Proof of concept implementations
 
-![Image](https://www.stacksimplify.com/course-images/azure-aks-ingress-basic.png)
+## ✨ Features
 
-![Image](https://learn.microsoft.com/en-us/azure/application-gateway/media/application-gateway-ingress-controller-overview/architecture.png)
+- 🎯 **Two Microservices**: Frontend (Web UI) + Backend (REST API)
+- 🐳 **Dockerized Applications**: Multi-stage builds with security best practices
+- ☸️ **Production Kubernetes Manifests**: Deployments, Services, Ingress, HPA, Network Policies
+- 🔄 **CI/CD Pipeline**: GitHub Actions with automated build, test, and deployment
+- 🔒 **Security**: RBAC, Network Policies, Secret management, non-root containers
+- 📈 **Auto-scaling**: Horizontal Pod Autoscaler (HPA) + Cluster Autoscaler
+- 🛠️ **Automation Scripts**: One-command cluster setup and deployment
+- 📊 **Monitoring**: Azure Monitor integration, health checks, metrics endpoints
+- 🧪 **Local Development**: Docker Compose for testing locally
 
----
-
-## 🧩 1. Use Case Overview
-
-**Organization Scenario**
-A SaaS company wants to modernize its monolithic application into **cloud-native microservices** with:
-
-* High availability
-* Auto-scaling
-* Secure networking
-* CI/CD automation
-* Zero-downtime deployments
-
-The solution is built using **Azure Kubernetes Service (AKS)**.
-
----
-
-## 🎯 2. Objectives
-
-| Objective         | Description                              |
-| ----------------- | ---------------------------------------- |
-| High Availability | Multi-node AKS cluster                   |
-| Scalability       | HPA + Cluster Autoscaler                 |
-| Security          | RBAC, Network Policies, Secrets          |
-| Observability     | Logs, metrics, monitoring                |
-| Automation        | CI/CD with GitHub Actions / Azure DevOps |
-| Cost Optimization | Node pools & autoscaling                 |
-
----
-
-## 🏗️ 3. Architecture Design
-
-![Image](https://www.stacksimplify.com/course-images/azure-aks-ingress-basic.png)
-
-![Image](https://learn.microsoft.com/en-us/samples/azure-samples/aks-api-server-vnet-integration-bicep/aks-api-server-vnet-integration-bicep/media/architecture.png)
-
-![Image](https://learn.microsoft.com/en-us/azure/aks/media/concepts-network/aks-ingress.png)
-
-### 🔹 High-Level Architecture
+## 📁 Project Structure
 
 ```
-Users
-  |
-  v
-Azure Load Balancer
-  |
-Ingress Controller (NGINX)
-  |
------------------------------
-| Frontend Service (UI)     |
-| Backend API Service      |
-| Auth Service             |
------------------------------
-  |
-  v
-Azure SQL / Cosmos DB
+aks-k8s-usecase/
+├── src/
+│   ├── frontend/              # Flask web application
+│   │   ├── app.py            # Main application
+│   │   ├── requirements.txt  # Dependencies
+│   │   ├── Dockerfile        # Multi-stage build
+│   │   └── templates/        # HTML templates
+│   └── backend/               # Flask REST API
+│       ├── app.py            # API endpoints
+│       ├── requirements.txt  # Dependencies
+│       └── Dockerfile        # Multi-stage build
+├── k8s/                       # Kubernetes manifests
+│   ├── frontend-deployment.yaml
+│   ├── backend-deployment.yaml
+│   ├── ingress.yaml
+│   └── configmap-network-policies.yaml
+├── scripts/                   # Automation scripts
+│   ├── setup-aks.sh          # AKS cluster setup
+│   ├── build-push.sh         # Build & push images
+│   └── deploy.sh             # Deploy to Kubernetes
+├── .github/workflows/         # CI/CD pipeline
+│   └── ci-cd.yml
+├── docker-compose.yml         # Local development
+├── IMPLEMENTATION.md          # Detailed documentation
+└── README.md                  # This file
+```
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+- [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (v2.50+)
+- [kubectl](https://kubernetes.io/docs/tasks/tools/) (v1.28+)
+- [Docker](https://docs.docker.com/get-docker/) (v24+)
+- Azure subscription ([Free account](https://azure.microsoft.com/free/))
+
+### 1️⃣ Clone Repository
+
+```bash
+git clone https://github.com/atulkamble/aks-k8s-usecase.git
+cd aks-k8s-usecase
+```
+
+### 2️⃣ Set Environment Variables
+
+```bash
+export RESOURCE_GROUP="aks-demo-rg"
+export LOCATION="eastus"
+export CLUSTER_NAME="aks-demo-cluster"
+export ACR_NAME="myuniquename123"  # Must be globally unique
+```
+
+### 3️⃣ Deploy to Azure
+
+```bash
+# Login to Azure
+az login
+
+# Make scripts executable
+chmod +x scripts/*.sh
+
+# Setup AKS cluster (10-15 minutes)
+./scripts/setup-aks.sh
+
+# Build and push images to ACR
+./scripts/build-push.sh
+
+# Deploy applications to AKS
+./scripts/deploy.sh
+```
+
+### 4️⃣ Test Locally (Optional)
+
+```bash
+# Start all services locally
+docker-compose up -d
+
+# Access at http://localhost
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+## 📚 Detailed Documentation
+
+For comprehensive documentation, see [IMPLEMENTATION.md](IMPLEMENTATION.md) which includes:
+- Architecture diagrams
+- Step-by-step setup guide
+- Kubernetes resource explanations
+- Troubleshooting guide
+- Best practices
+- Monitoring and logging
+
+---
+
+## 🏗️ Architecture
+
+### High-Level Architecture
+
+```
+                    ┌─────────────┐
+                    │   Internet  │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │   Azure LB  │
+                    └──────┬──────┘
+                           │
+                    ┌──────▼──────┐
+                    │    NGINX    │
+                    │   Ingress   │
+                    └──────┬──────┘
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+       ┌──────▼──────┐          ┌──────▼──────┐
+       │  Frontend   │──────────│   Backend   │
+       │  Service    │          │     API     │
+       │  (Flask)    │          │   (Flask)   │
+       └─────────────┘          └──────┬──────┘
+                                       │
+                                ┌──────▼──────┐
+                                │  Database   │
+                                └─────────────┘
+```
+
+### Technology Stack
+
+- **Frontend**: Flask + Python 3.11 + Gunicorn
+- **Backend**: Flask REST API + Python 3.11 + Gunicorn
+- **Container**: Docker (multi-stage builds)
+- **Orchestration**: Kubernetes on AKS
+- **Networking**: Azure CNI, NGINX Ingress
+- **CI/CD**: GitHub Actions
+- **Monitoring**: Azure Monitor + Container Insights
+- **Registry**: Azure Container Registry (ACR)
+
+---� Key Features Implemented
+
+### Microservices
+
+#### Frontend Service (Flask Web UI)
+- Responsive web interface
+- Inter-service communication with backend
+- Health check endpoints (`/health`)
+- Metrics endpoint (`/api/metrics`)
+- Environment-based configuration
+
+#### Backend API Service (Flask REST API)
+- RESTful API design with full CRUD operations
+- Endpoints: `/api/items` (GET, POST)
+- Individual item operations (GET, PUT, DELETE)
+- Health and readiness probes
+- Structured logging
+
+### Kubernetes Resources
+
+- **Deployments**: 3 replicas for HA, rolling updates, resource limits
+- **Services**: ClusterIP for internal communication
+- **Ingress**: NGINX with SSL/TLS, CORS, rate limiting
+- **HPA**: Auto-scaling (3-10 frontend, 3-20 backend replicas)
+- **Network Policies**: Micro-segmentation for security
+- **ConfigMaps**: Application configuration
+- **Secrets**: Sensitive data management
+- **PodDisruptionBudgets**: Maintain availability during disruptions
+
+### Security Best Practices
+
+- ✅ Non-root containers
+- ✅ Read-only root filesystem where possible
+- ✅ Network policies for traffic control
+- ✅ Private container registry (ACR)
+- ✅ Secret management with Kubernetes Secrets
+- ✅ RBAC with Azure AD integration
+- ✅ TLS/SSL encryption
+
+### DevOps & Automation
+
+- **CI/CD Pipeline**: GitHub Actions with automated build, test, deploy
+- **Infrastructure Scripts**: Automated AKS setup, image building, deployment
+- **Local Development**: Docker Compose for local testing
+- **Monitoring**: Azure Monitor + Container Insights integration
+
+---
+
+## 📋 Application Endpoints
+
+### Frontend Service
+- `GET /` - Main web UI
+- `GET /health` - Health check
+- `GET /api/data` - Fetch data from backend
+- `GET /api/metrics` - Prometheus metrics
+
+### Backend API Service
+- `GET /` - API information
+- `GET /health` - Health check
+- `GET /ready` - Readiness probe
+- `GET /api/items` - List all items
+- `GET /api/items/<id>` - Get specific item
+- `POST /api/items` - Create new item
+- `PUT /api/items/<id>` - Update item
+- `DELETE /api/items/<id>` - Delete item
+- `GET /api/metrics` - Service metrics
+
+---
+
+## 🛠️ Development Workflow
+
+### Local Development
+
+1. **Start services locally:**
+```bash
+docker-compose up -d
+```
+
+2. **Access application:**
+- Frontend: http://localhost
+- Backend API: http://localhost:8080
+- Database: localhost:5432
+
+3. **View logs:**
+```bash
+docker-compose logs -f
+docker-compose logs -f frontend
+docker-compose logs -f backend
+```
+
+4. **Stop services:**
+```bash
+docker-compose down
+```
+
+### Build Docker Images
+
+```bash
+# Frontend
+cd src/frontend
+docker build -t frontend:latest .
+
+# Backend
+cd src/backend
+docker build -t backend:latest .
+```
+
+### Deploy to AKS
+
+```bash
+# Update image references in k8s manifests
+# Deploy to Kubernetes
+kubectl apply -f k8s/
 ```
 
 ---
 
-## 🧱 4. Core Kubernetes Components Used
+## 📊 Monitoring & Operations
 
-| Component  | Purpose                        |
-| ---------- | ------------------------------ |
-| Pod        | Smallest deployable unit       |
-| Deployment | Stateless microservices        |
-| Service    | Internal & external networking |
-| Ingress    | HTTP routing                   |
-| ConfigMap  | App configuration              |
-| Secret     | Passwords, tokens              |
-| HPA        | Auto-scale pods                |
-| Node Pool  | Workload separation            |
+### View Cluster Resources
 
----
+```bash
+# Get cluster info
+kubectl cluster-info
 
-## ☁️ 5. AKS Cluster Setup (High Level)
+# View nodes
+kubectl get nodes
 
-### AKS Design Choices
+# View all resources
+kubectl get all -n default
 
-* **System Node Pool** – Core services
-* **User Node Pool** – Application workloads
-* **VM Size** – Standard_D4s_v5
-* **Networking** – Azure CNI
-* **RBAC** – Azure AD integrated
+# View pod logs
+kubectl logs -f deployment/frontend -n default
+kubectl logs -f deployment/backend -n default
+```
 
----
+### Monitor Performance
 
-## 📦 6. Application Deployment (Example)
+```bash
+# Resource usage
+kubectl top nodes
+kubectl top pods -n default
 
-### 🔹 Frontend Deployment
+# Describe resources
+kubectl describe deployment frontend -n default
+kubectl describe pod <pod-name> -n default
+```
 
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: frontend
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: frontend
-  template:
-    metadata:
-      labels:
-        app: frontend
-    spec:
-      containers:
-      - name: frontend
-        image: myacr.azurecr.io/frontend:v1
-        ports:
-        - containerPort: 80
+### Access Azure Monitor
+
+```bash
+# View container insights
+az aks show --resource-group $RESOURCE_GROUP \
+  --name $CLUSTER_NAME \
+  --query addonProfiles.omsagent
 ```
 
 ---
 
-## 🌐 7. Ingress Configuration
+## 🐛 Troubleshooting
 
-![Image](https://docs.nginx.com/nic/ic-high-level.png)
+### Common Issues
 
-![Image](https://miro.medium.com/0%2AlYDCSQBkcPMS31p4.png)
+**Pods not starting:**
+```bash
+kubectl get pods -n default
+kubectl describe pod <pod-name> -n default
+kubectl logs <pod-name> -n default
+```
 
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: app-ingress
-spec:
-  rules:
-  - host: app.company.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: frontend
-            port:
-              number: 80
+**Service connectivity issues:**
+```bash
+kubectl get svc -n default
+kubectl get endpoints -n default
+kubectl exec -it <pod-name> -n default -- curl http://backend-service:8080/health
+```
+
+**Ingress not working:**
+```bash
+kubectl get ingress -n default
+kubectl describe ingress app-ingress -n default
+kubectl logs -n ingress-nginx deployment/ingress-nginx-controller
+```
+
+**Image pull errors:**
+```bash
+az aks check-acr --resource-group $RESOURCE_GROUP \
+  --name $CLUSTER_NAME \
+  --acr $ACR_NAME.azurecr.io
 ```
 
 ---
 
-## 📈 8. Auto Scaling Strategy
+## 📈 Scaling
 
-### 🔹 Horizontal Pod Autoscaler
+### Manual Scaling
 
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: backend-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: backend
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 70
+```bash
+# Scale deployments
+kubectl scale deployment frontend --replicas=5 -n default
+kubectl scale deployment backend --replicas=8 -n default
+```
+
+### Auto-scaling (HPA)
+
+HPA is configured automatically based on:
+- CPU utilization (70% target)
+- Memory utilization (80% target)
+
+View HPA status:
+```bash
+kubectl get hpa -n default
+kubectl describe hpa frontend-hpa -n default
 ```
 
 ---
 
-## 🔐 9. Security & Best Practices
+## 🔒 Security Considerations
 
-| Area           | Implementation             |
-| -------------- | -------------------------- |
-| Secrets        | Kubernetes Secrets         |
-| RBAC           | Azure AD + Kubernetes RBAC |
-| Network        | Network Policies           |
-| Image Security | Private ACR                |
-| TLS            | HTTPS via Ingress          |
+1. **Container Security**
+   - Use minimal base images (Alpine/Slim)
+   - Run as non-root user
+   - Scan images for vulnerabilities
 
----
+2. **Network Security**
+   - Implement Network Policies
+   - Use private subnets
+   - Enable TLS/SSL
 
-## 🔍 10. Monitoring & Logging
+3. **Secret Management**
+   - Never commit secrets to Git
+   - Use Azure Key Vault for sensitive data
+   - Rotate secrets regularly
 
-![Image](https://learn.microsoft.com/en-us/azure/architecture/aws-professional/eks-to-aks/media/monitor-containers-architecture.svg)
-
-![Image](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/media/kubernetes-monitoring-overview/layers.png)
-
-* **Azure Monitor**
-* **Container Insights**
-* **Prometheus + Grafana**
-* **kubectl logs / describe**
-
----
-
-## 🔁 11. CI/CD Flow
-
-![Image](https://miro.medium.com/v2/resize%3Afit%3A904/1%2ApdlswSpaaEBepgqE-UCueg.png)
-
-![Image](https://learn.microsoft.com/en-us/azure/architecture/guide/aks/media/aks-cicd-azure-pipelines-architecture.svg)
-
-### CI/CD Steps
-
-1. Code push to GitHub
-2. Docker image build
-3. Push image to ACR
-4. Deploy to AKS
-5. Rolling update
+4. **Access Control**
+   - Implement RBAC
+   - Use Azure AD integration
+   - Principle of least privilege
 
 ---
 
-## ⚠️ 12. Challenges & Solutions
+## 🎓 Learning Resources
 
-| Challenge      | Solution                    |
-| -------------- | --------------------------- |
-| Pod crashes    | Liveness & readiness probes |
-| Traffic spikes | HPA + Cluster Autoscaler    |
-| Secret leakage | Azure Key Vault integration |
-| Downtime       | Rolling deployments         |
-
----
-
-## 🧠 13. Real-World Benefits
-
-* 🚀 Faster deployments
-* 📉 Reduced infrastructure cost
-* 🔁 Zero downtime updates
-* 🔒 Enterprise-grade security
-* 📊 Observability & insights
+This project demonstrates:
+- ✅ Microservices architecture
+- ✅ Containerization with Docker
+- ✅ Kubernetes orchestration
+- ✅ Azure cloud services (AKS, ACR)
+- ✅ CI/CD with GitHub Actions
+- ✅ Infrastructure as Code
+- ✅ DevOps best practices
+- ✅ Production-ready configurations
 
 ---
 
-## 🎓 14. Interview / Training Value
+## 🤝 Contributing
 
-This use case demonstrates:
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
-* **Kubernetes fundamentals**
-* **AKS production design**
-* **DevOps best practices**
-* **Cloud-native architecture**
+---
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**Atul Kamble**
+- GitHub: [@atulkamble](https://github.com/atulkamble)
+- LinkedIn: [atuljkamble](https://www.linkedin.com/in/atuljkamble/)
+- Twitter: [@atul_kamble](https://x.com/atul_kamble)
+
+---
+
+## 🙏 Acknowledgments
+
+- Azure Kubernetes Service documentation
+- Kubernetes community
+- Flask framework
+- NGINX Ingress Controller
+
+---
+
+<div align="center">
+<p><strong>⭐ If you find this project helpful, please consider giving it a star!</strong></p>
+<p>Made with ❤️ for the DevOps and Cloud Native community</p>
+</div>*Cloud-native architecture**
 
 ---
