@@ -101,10 +101,10 @@ cd aks-k8s-usecase
 ### 2️⃣ Set Environment Variables
 
 ```bash
-export RESOURCE_GROUP="aks-demo-rg"
+export RESOURCE_GROUP="aks"
 export LOCATION="eastus"
-export CLUSTER_NAME="aks-demo-cluster"
-export ACR_NAME="myuniquename123"  # Must be globally unique
+export CLUSTER_NAME="mycluster"
+export ACR_NAME="atulkamble"  # Must be globally unique
 ```
 
 ### 3️⃣ Deploy to Azure

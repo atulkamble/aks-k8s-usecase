@@ -33,7 +33,7 @@ log_error() {
 }
 
 # Configuration
-ACR_NAME="${ACR_NAME:-aksdemoregistry}"
+ACR_NAME="${ACR_NAME:-atulkamble}"
 VERSION="${VERSION:-v1.0.0}"
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 

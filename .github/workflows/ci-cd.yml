@@ -21,9 +21,9 @@ on:
 
 env:
   # Azure configuration
-  AZURE_RESOURCE_GROUP: aks-demo-rg
-  AZURE_AKS_CLUSTER: aks-demo-cluster
-  AZURE_ACR_NAME: aksdemoregistry
+  AZURE_RESOURCE_GROUP: aks
+  AZURE_AKS_CLUSTER: mycluster
+  AZURE_ACR_NAME: atulkamble
   
   # Application configuration
   APP_NAMESPACE: default

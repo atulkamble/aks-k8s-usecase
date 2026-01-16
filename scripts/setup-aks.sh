@@ -44,10 +44,10 @@ log_error() {
 
 # Configuration variables
 # Update these values according to your requirements
-RESOURCE_GROUP="${RESOURCE_GROUP:-aks-demo-rg}"
+RESOURCE_GROUP="${RESOURCE_GROUP:-aks}"
 LOCATION="${LOCATION:-eastus}"
-CLUSTER_NAME="${CLUSTER_NAME:-aks-demo-cluster}"
-ACR_NAME="${ACR_NAME:-aksdemoregistry}"
+CLUSTER_NAME="${CLUSTER_NAME:-mycluster}"
+ACR_NAME="${ACR_NAME:-atulkamble}"
 K8S_VERSION="${K8S_VERSION:-1.28.3}"
 
 # Node pool configuration
