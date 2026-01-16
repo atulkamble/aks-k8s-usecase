@@ -1,5 +1,5 @@
 <div align="center">
-<h1>🚀 MyApp</h1>
+<h1>🚀 Kubernetes Full Use Case on AKS</h1>
 <p><strong>Built with ❤️ by <a href="https://github.com/atulkamble">Atul Kamble</a></strong></p>
 
 <p>
@@ -35,8 +35,6 @@
 Below is a **complete, real-world Kubernetes use case on AKS**, written in a **solution-architecture + DevOps interview/project format**. This is suitable for **GitHub README, training material, interviews, and client proposals**.
 
 ---
-
-# 🚀 Kubernetes Full Use Case on AKS
 
 **Title:** Production-Ready Microservices Deployment on Azure Kubernetes Service (AKS)
 
